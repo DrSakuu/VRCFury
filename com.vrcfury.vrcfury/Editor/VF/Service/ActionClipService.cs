@@ -207,6 +207,41 @@ namespace VF.Service {
                         var copy = clipActionClip.Clone();
                         AddFullBodyClip(copy);
                         copy.Rewrite(rewriter);
+
+                        if (clipAction.applyToAll) {
+                            var rootTransform = avatarObject.transform;
+                            foreach (var editorCurveBinding in AnimationUtility.GetCurveBindings(copy)) {
+                                string relativePath = editorCurveBinding.path;
+                                var animatedObject = avatarObject.transform.Find(relativePath);
+                                if (animatedObject != null) {
+
+                                    // Fetch all the children of this transform in the hierarchy
+                                    var allChildren = rootTransform.GetComponentsInChildren(animatedObject.GetType());
+        
+                                    foreach (var child in allChildren) {
+                                        if (child != animatedObject) {
+                                            // Make sure we set a correct path depending on the child object position in the hierarchy relative to the rootTransform
+                                            var newPath = child.name;
+                                            var currentParent = child.transform.parent;
+                                            while (currentParent != null && currentParent != rootTransform) {
+                                                newPath = currentParent.name + "/" + newPath;
+                                                currentParent = currentParent.parent;
+                                            }
+
+                                            var newBinding = new EditorCurveBinding {
+                                                path = newPath,
+                                                type = editorCurveBinding.type,
+                                                propertyName = editorCurveBinding.propertyName
+                                            };
+                
+                                            var curve = AnimationUtility.GetEditorCurve(copy, editorCurveBinding);
+                                            AnimationUtility.SetEditorCurve(copy, newBinding, curve);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
                         onClip.CopyFrom(copy);
                         break;
                     case ObjectToggleAction toggle: {
