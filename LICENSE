@@ -1,16 +1,33 @@
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License, version 3 ("GPLv3") as published by the Free Software Foundation.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License, version 3 ("GPLv3") as published
+by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
 
-Linking VRCFury statically or dynamically with other modules is making a combined work based on VRCFury. Thus, the terms and conditions of the GNU General Public License cover the whole combination.
+Linking VRCFury statically or dynamically with other modules is making a
+combined work based on VRCFury. Thus, the terms and conditions of the GNU
+General Public License cover the whole combination.
 
-As a special exception, the copyright holders of VRCFury give you permission to combine the VRCFury program with (a) independent modules that communicate with VRCFury solely through the interface defined within the com.vrcfury.api c# assembly, (b) independent modules that communicate with VRCFury solely through Unity Game Engine MonoBehaviour classes, (c) the Unity Game Engine, (d) the VRChat 'VRCSDK', (e) independent modules that do not communicate directly with VRCFury in any way. You may copy and distribute such a system following the terms of the GNU GPL for VRCFury and the licenses of the other code concerned, provided that you do not redistribute and/or modify VRCFury in any way.
+As a special exception, the copyright holders of VRCFury give you permission to
+combine the VRCFury program with independent modules, regardless of the license
+terms of these independent modules, provided that you also meet, for each
+linked independent module, the terms and conditions of the license of that
+module, and provided that you do not modify or redistribute VRCFury as a part
+of the combined work.
 
-Note that people who redistribute and/or modify VRCFury are not permitted to grant this special exception for their redistributed and/or modified versions. If you redistribute and/or modify VRCFury in any way, this exception does not apply to your version of VRCFury, and you must remove this exception when you distribute your modified version.
+Note that people who redistribute and/or modify VRCFury are not permitted to
+grant this special exception for their redistributed and/or modified versions.
+If you redistribute and/or modify VRCFury in any way, this exception does not
+apply to your version of VRCFury, and you must remove this exception when you
+distribute your version.
 
-This exception is an additional permission under section 7 of the GNU General Public License, version 3 ("GPLv3")
+This exception is an additional permission under section 7 of the GNU General
+Public License, version 3 ("GPLv3")
 
 ---
 
