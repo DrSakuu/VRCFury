@@ -87,6 +87,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: repo
+      - name: Copy license
+        working-directory: repo
+        run: |
+          cp LICENSE com.vrcfury.vrcfury/LICENSE
+          cp .github/licmeta com.vrcfury.vrcfury/LICENSE.meta
       - name: Checkout version manifest
         uses: actions/checkout@v4
         with:
