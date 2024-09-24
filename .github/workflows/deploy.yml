@@ -90,8 +90,8 @@ jobs:
       - name: Copy license
         working-directory: repo
         run: |
-          cp LICENSE com.vrcfury.vrcfury/LICENSE
-          cp .github/licmeta com.vrcfury.vrcfury/LICENSE.meta
+          cp LICENSE.md com.vrcfury.vrcfury/LICENSE.md
+          cp .github/licmeta com.vrcfury.vrcfury/LICENSE.md.meta
       - name: Checkout version manifest
         uses: actions/checkout@v4
         with:
