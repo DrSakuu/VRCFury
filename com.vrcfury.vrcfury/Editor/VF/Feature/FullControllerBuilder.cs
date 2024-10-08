@@ -35,6 +35,7 @@ namespace VF.Feature {
         [VFAutowired] private readonly LayerSourceService layerSourceService;
         [VFAutowired] private readonly VRCAvatarDescriptor avatar;
         [VFAutowired] private readonly ParamsService paramsService;
+        [VFAutowired] private readonly DbtLayerService dbtLayerService;
         private ParamManager paramz => paramsService.GetParams();
         [VFAutowired] private readonly MenuService menuService;
         private MenuManager avatarMenu => menuService.GetMenu();
@@ -48,11 +49,11 @@ namespace VF.Feature {
 
             foreach (var p in model.prms) {
                 var prms = p.parameters.Get();
-                if (!prms) {
+                if (prms == null) {
                     missingAssets.Add(p.parameters);
                     continue;
                 }
-                var copy = MutableManager.CopyRecursive(prms);
+                var copy = prms.Clone();
                 copy.RewriteParameters(RewriteParamName);
                 foreach (var param in copy.parameters) {
                     if (string.IsNullOrWhiteSpace(param.name)) continue;
@@ -93,7 +94,7 @@ namespace VF.Feature {
 
                 CheckMenuParams(menu);
 
-                var copy = MutableManager.CopyRecursive(menu);
+                var copy = menu.Clone();
                 copy.RewriteParameters(RewriteParamName);
                 var prefix = MenuManager.SplitPath(m.prefix);
                 avatarMenu.MergeMenu(prefix, copy);
@@ -117,10 +118,10 @@ namespace VF.Feature {
 
             if (missingAssets.Count > 0) {
                 if (model.allowMissingAssets) {
-                    var list = string.Join(", ", missingAssets.Select(w => VrcfObjectId.FromId(w.id).Pretty()));
+                    var list = missingAssets.Select(w => VrcfObjectId.FromId(w.id).Pretty()).Join(", ");
                     Debug.LogWarning($"Missing Assets: {list}");
                 } else {
-                    var list = string.Join("\n", missingAssets.Select(w => VrcfObjectId.FromId(w.id).Pretty()));
+                    var list = missingAssets.Select(w => VrcfObjectId.FromId(w.id).Pretty()).Join("\n");
                     throw new Exception(
                         "You're missing some files needed for this VRCFury asset. " +
                         "Are you sure you've imported all the packages needed? Here are the files that are missing:\n\n" +
@@ -134,7 +135,7 @@ namespace VF.Feature {
             void CheckParam(string param, IList<string> path) {
                 if (string.IsNullOrEmpty(param)) return;
                 if (paramz.GetParam(RewriteParamName(param)) != null) return;
-                failedParams.Add($"{param} (used by {string.Join("/", path)})");
+                failedParams.Add($"{param} (used by {path.Join('/')})");
             }
             menu.ForEachMenu(ForEachItem: (item, path) => {
                 CheckParam(item.parameter?.name, path);
@@ -148,7 +149,7 @@ namespace VF.Feature {
             if (failedParams.Count > 0) {
                 throw new Exception(
                     "The merged menu uses parameters that aren't in the merged parameters file:\n\n" +
-                    string.Join("\n", failedParams));
+                    failedParams.Join('\n'));
             }
         }
 
@@ -310,7 +311,9 @@ namespace VF.Feature {
                             maxSupported = float.MaxValue;
                             break;
                     }
+                    var directTree = dbtLayerService.Create("Smoothing for Full Controller");
                     var smoothed = smoothingService.Smooth(
+                        directTree,
                         $"{rewritten}/Smoothed",
                         target,
                         smoothedParam.smoothingDuration,
@@ -536,7 +539,19 @@ namespace VF.Feature {
                 var usesWdOff = controllers
                     .SelectMany(c => new AnimatorIterator.States().From(c))
                     .Any(state => !state.writeDefaultValues);
-                var warnings = VrcfAnimationDebugInfo.BuildDebugInfo(controllers, avatarObject, baseObject, path => RewritePath(model, path), suggestPathRewrites: true).ToList();
+                var rewrites = prop.FindPropertyRelative("rewriteBindings");
+                var warnings = VrcfAnimationDebugInfo.BuildDebugInfo(
+                    controllers,
+                    avatarObject,
+                    baseObject,
+                    path => RewritePath(model, path),
+                    addPathRewrite: path => {
+                        VRCFuryEditorUtils.AddToList(rewrites, entry => {
+                            entry.FindPropertyRelative("from").stringValue = path;
+                            entry.FindPropertyRelative("to").stringValue = "";
+                        });
+                    }
+                ).ToList();
                 if (usesWdOff) {
                     warnings.Add(VRCFuryEditorUtils.Warn(
                         "This controller uses WD off!" +

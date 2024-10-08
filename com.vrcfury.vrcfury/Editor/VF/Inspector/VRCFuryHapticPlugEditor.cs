@@ -91,7 +91,7 @@ namespace VF.Inspector {
             sizeSection.Add(VRCFuryEditorUtils.Debug(refreshMessage: () => {
                 var size = PlugSizeDetector.GetWorldSize(target);
                 var text = new List<string>();
-                text.Add("Attached renderers: " + string.Join(", ", size.renderers.Select(r => r.owner().name)));
+                text.Add("Attached renderers: " + size.renderers.Select(r => r.owner().name).Join(", "));
                 text.Add($"Detected Length: {size.worldLength}m");
                 text.Add($"Detected Radius: {size.worldRadius}m");
 
@@ -112,7 +112,7 @@ namespace VF.Inspector {
                 var displayWarning = bones.Length > 0 && !isInsideBone;
                 boneWarning.SetVisible(displayWarning);
                 
-                return string.Join("\n", text);
+                return text.Join('\n');
             }));
             
             container.Add(VRCFuryEditorUtils.BetterProp(enableSps, "Enable Deformation"));
@@ -246,7 +246,7 @@ namespace VF.Inspector {
                         "This avatar still contains a DPS tip light! This means your avatar has not been fully converted to SPS," +
                         " and your DPS penetrator may cause issues if too many sockets are on nearby." +
                         " Check out https://vrcfury.com/sps for details about how to fully upgrade a DPS penetrator to an SPS plug.\n\n" +
-                        string.Join("\n", tipLightPaths)
+                        tipLightPaths.Join('\n')
                     );
                     output.Add(warning);
                 }
@@ -255,14 +255,14 @@ namespace VF.Inspector {
                         "This avatar still contains un-upgraded DPS orifice lights! This means your avatar has not been fully converted to SPS," +
                         " and your DPS orifices may cause issues if too many are active at the same time." +
                         " Check out https://vrcfury.com/sps for details about how to upgrade DPS orifices to SPS sockets.\n\n" +
-                        string.Join("\n", orificeLightPaths)
+                        orificeLightPaths.Join('\n')
                     );
                     output.Add(warning);
                 }
                 if (lightPaths.Any()) {
                     var warning = VRCFuryEditorUtils.Warn(
                         "This avatar contains lights! Beware that these lights may interfere with SPS if they are enabled at the same time.\n\n" +
-                        string.Join("\n", lightPaths)
+                        lightPaths.Join('\n')
                     );
                     output.Add(warning);
                 }
@@ -271,7 +271,7 @@ namespace VF.Inspector {
                         "This avatar still contains a legacy DPS or TPS penetrator! This means your avatar has not been fully converted to SPS," +
                         " and your legacy penetrator may cause issues if too many sockets are on nearby." +
                         " Check out https://vrcfury.com/sps for details about how to fully upgrade a DPS penetrator to an SPS plug.\n\n" +
-                        string.Join("\n", legacyRendererPaths)
+                        legacyRendererPaths.Join('\n')
                     );
                     output.Add(warning);
                 }
@@ -396,7 +396,6 @@ namespace VF.Inspector {
         public static BakeResult Bake(
             VRCFuryHapticPlug plug,
             HapticContactsService hapticContactsService,
-            string tmpDir,
             Dictionary<VFGameObject, VRCFuryHapticPlug> usedRenderers = null,
             bool deferMaterialConfig = false
         ) {
@@ -500,7 +499,7 @@ namespace VF.Inspector {
                             SpsAutoRigger.AutoRig(skin, localSpace, worldLength, worldRadius, activeFromMask);
                         }
 
-                        var spsBaked = plug.enableSps ? SpsBaker.Bake(skin, tmpDir, activeFromMask, false, spsBlendshapes) : null;
+                        var spsBaked = plug.enableSps ? SpsBaker.Bake(skin, activeFromMask, false, spsBlendshapes) : null;
 
                         var finishedCopies = new HashSet<Material>();
                         Material ConfigureMaterial(int slotNum, Material mat) {
@@ -524,9 +523,7 @@ namespace VF.Inspector {
                                     var copy = mat.Clone("Needed to change properties for TPS autoconfiguration");
                                     if (finishedCopies.Contains(copy)) return copy;
                                     finishedCopies.Add(copy);
-                                    TpsConfigurer.ConfigureTpsMaterial(skin, copy, worldLength,
-                                        activeFromMask,
-                                        tmpDir);
+                                    TpsConfigurer.ConfigureTpsMaterial(skin, copy, worldLength, activeFromMask);
                                     return copy;
                                 }
 
@@ -558,12 +555,22 @@ namespace VF.Inspector {
                 }
             }
 
+            var name = plug.name;
+            if (string.IsNullOrWhiteSpace(name)) {
+                if (renderers.Count > 0) {
+                    name = HapticUtils.GetName(rendererResults.First().renderer.owner());
+                } else {
+                    name = HapticUtils.GetName(plug.owner());
+                }
+            }
+
             return new BakeResult {
                 bakeRoot = localSpace,
                 worldSpace = worldSpace,
                 renderers = rendererResults,
                 worldLength = worldLength,
                 worldRadius = worldRadius,
+                name = name,
             };
         }
 
@@ -573,6 +580,7 @@ namespace VF.Inspector {
             public ICollection<RendererResult> renderers;
             public float worldLength;
             public float worldRadius;
+            public string name;
         }
 
         public class RendererResult {

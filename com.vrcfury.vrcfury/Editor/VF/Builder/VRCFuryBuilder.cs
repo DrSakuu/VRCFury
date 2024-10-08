@@ -24,7 +24,6 @@ using Object = UnityEngine.Object;
 namespace VF.Builder {
 
     internal class VRCFuryBuilder {
-
         internal enum Status {
             Success,
             Failed
@@ -76,6 +75,10 @@ namespace VF.Builder {
                 Debug.Log("VRCFury components not found in avatar. Skipping.");
                 return;
             }
+            
+            // If we don't do this, a unity issue in RepaintImmediately can randomly throw a segfault
+            RenderTexture.active = null;
+            Camera.SetupCurrent(null);
 
             /*
              * We call SaveAssets here for two reasons:
@@ -110,15 +113,11 @@ namespace VF.Builder {
             VFGameObject avatarObject,
             VRCFProgressWindow progress
         ) {
-            var tmpDirParent = $"{TmpFilePackage.GetPath()}/{VRCFuryAssetDatabase.MakeFilenameSafe(avatarObject.name)}";
-            // Don't reuse subdirs, because if unity reuses an asset path, it randomly explodes and picks up changes from the
-            // old asset and messes with the new copy.
-            var tmpDir = $"{tmpDirParent}/{DateTime.Now.ToString("yyyyMMdd-HHmmss")}";
-
             var currentModelName = "";
             var currentModelClipPrefix = "?";
             var currentServiceNumber = 0;
             var currentServiceGameObject = avatarObject;
+            var currentObjectPath = "";
 
             var actions = new List<FeatureBuilderAction>();
             var totalActionCount = 0;
@@ -139,8 +138,6 @@ namespace VF.Builder {
             injector.Set("componentObject", new Func<VFGameObject>(() => currentServiceGameObject));
             
             var globals = new GlobalsService {
-                tmpDirParent = tmpDirParent,
-                tmpDir = tmpDir,
                 addOtherFeature = (feature) => AddComponent(feature, currentServiceGameObject, currentServiceNumber),
                 allFeaturesInRun = collectedModels,
                 allBuildersInRun = collectedBuilders,
@@ -149,7 +146,7 @@ namespace VF.Builder {
                 currentFeatureNameProvider = () => currentModelName,
                 currentFeatureClipPrefixProvider = () => currentModelClipPrefix,
                 currentMenuSortPosition = () => currentServiceNumber,
-                currentComponentObject = () => currentServiceGameObject,
+                currentFeatureObjectPath = () => currentObjectPath,
             };
             injector.Set(globals);
             
@@ -232,8 +229,6 @@ namespace VF.Builder {
                 }
             }
 
-            AddComponent(new DirectTreeOptimizer { managedOnly = true }, avatarObject);
-
             FeatureOrder? lastPriority = null;
             while (actions.Count > 0) {
                 var action = actions.Min();
@@ -256,6 +251,7 @@ namespace VF.Builder {
                 currentModelName = $"{service.GetType().Name}.{action.GetName()} on {objectName}";
                 currentModelClipPrefix = $"VF{currentServiceNumber} {(service as FeatureBuilder)?.GetClipPrefix() ?? service.GetType().Name}";
                 currentServiceGameObject = action.configObject;
+                currentObjectPath = action.configObject.GetPath(avatarObject);
 
                 var statusMessage = $"{service.GetType().Name}.{action.GetName()} on {objectName} ({currentServiceNumber})";
                 progress.Progress(1 - (actions.Count / (float)totalActionCount), statusMessage);
